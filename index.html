@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suspiciously Happy Guide :3</title>
+<style>
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    background: linear-gradient(135deg, #fffa9e, #ffe5b4);
+    user-select: none;
+    overflow: hidden;
+}
+
+#guideContainer {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    width: 300px;
+    transition: opacity 0.5s;
+}
+
+#guideName {
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+#guideSprite {
+    width: 150px;
+    height: auto;
+    transition: transform 0.2s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+#guideText {
+    font-size: 18px;
+    margin-top: 10px;
+    min-height: 50px;
+}
+
+#nextArrow {
+    font-size: 24px;
+    margin-top: 10px;
+    cursor: pointer;
+    display: inline-block;
+    animation: bounce 1s infinite;
+}
+
+#guideButtons {
+    margin-top: 10px;
+}
+
+.guideButton {
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 15px;
+    border: none;
+    background-color: #2196F3;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.guideButton:hover {
+    background-color: #0b79d0;
+    transform: scale(1.05);
+}
+</style>
+</head>
+<body>
+
+<div id="guideContainer">
+    <div id="guideName">Guide :3</div>
+    <img id="guideSprite" src="" alt="Guide">
+    <div id="guideText"></div>
+    <div id="nextArrow">⬇️</div>
+    <div id="guideButtons" style="display:none;">
+        <button class="guideButton" id="yesBtn">Yes :D</button>
+        <button class="guideButton" id="noBtn">No :(</button>
+    </div>
+</div>
+
+<script>
+// Sprites
+const idleSprite = "https://raw.githubusercontent.com/AC1DST4R/Super-Aw3some-clicker-game/main/Photos%20%3A0/Screenshot_20260111_152540-removebg-preview.png";
+const talkSprite = "https://raw.githubusercontent.com/AC1DST4R/Super-Aw3some-clicker-game/main/Photos%20%3A0/Screenshot_20260111_152558-removebg-preview.png";
+const questionSprite = "https://raw.githubusercontent.com/AC1DST4R/Super-Aw3some-clicker-game/main/Photos%20%3A0/Screenshot_20260111_152713-removebg-preview.png";
+const sadSprite = "https://raw.githubusercontent.com/AC1DST4R/Super-Aw3some-clicker-game/main/Photos%20%3A0/Screenshot_20260111_152740-removebg-preview.png";
+
+// Messages
+const messages = [
+    {text: "Oh! Hello :3!!", sprite: talkSprite},
+    {text: "I see ur new here :00", sprite: talkSprite},
+    {text: "Would you liek me to show u around :)??", sprite: questionSprite, isQuestion:true}
+];
+
+let messageIndex = 0;
+const guideSpriteElem = document.getElementById('guideSprite');
+const guideText = document.getElementById('guideText');
+const nextArrow = document.getElementById('nextArrow');
+const guideButtons = document.getElementById('guideButtons');
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+const guideContainer = document.getElementById('guideContainer');
+
+let talkingInterval;
+
+// Typewriter effect with sprite switching
+function typeMessage(message, callback) {
+    guideText.textContent = "";
+    let i = 0;
+
+    // Alternate sprite between idle and talk
+    guideSpriteElem.src = talkSprite;
+    talkingInterval = setInterval(() => {
+        guideSpriteElem.src = guideSpriteElem.src === talkSprite ? idleSprite : talkSprite;
+    }, 300);
+
+    const interval = setInterval(() => {
+        guideText.textContent += message.text[i];
+        i++;
+        if (i >= message.text.length) {
+            clearInterval(interval);
+            clearInterval(talkingInterval);
+            guideSpriteElem.src = message.isQuestion ? questionSprite : idleSprite;
+            if (callback) callback();
+        }
+    }, 50);
+}
+
+// Show next message
+function nextMessage() {
+    if(messageIndex < messages.length) {
+        typeMessage(messages[messageIndex], () => {
+            if(messages[messageIndex].isQuestion) {
+                nextArrow.style.display = "none";
+                guideButtons.style.display = "block";
+            }
+        });
+        messageIndex++;
+    }
+}
+
+// Arrow click
+nextArrow.addEventListener('click', nextMessage);
+
+// Hide guide and redirect after 2s
+function hideGuideAndRedirect() {
+    guideContainer.style.opacity = 0;
+    setTimeout(() => {
+        window.location.replace("https://ac1dst4r.github.io/Super-Aw3some-clicker-game/Game%20:3333/");
+    }, 2000);
+}
+
+// Buttons actions
+yesBtn.addEventListener('click', () => {
+    guideSpriteElem.src = talkSprite;
+    guideText.textContent = "YAY!! Let's show u around :D ^-^";
+    guideButtons.style.display = "none";
+    hideGuideAndRedirect();
+});
+
+noBtn.addEventListener('click', () => {
+    guideSpriteElem.src = sadSprite;
+    guideText.textContent = "Aww :( ok maybe later :0";
+    guideButtons.style.display = "none";
+    hideGuideAndRedirect();
+});
+
+// Start first message
+setTimeout(nextMessage, 500);
+</script>
+
+</body>
+</html>
