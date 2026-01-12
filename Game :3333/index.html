@@ -2,243 +2,269 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Fun C0okie clicker game ^^</title>
+<title>Fun C0okie Clicker Game ^^</title>
+
 <style>
-  /* Soft cream background and user-friendly colors */
   body {
     font-family: 'Courier New', monospace;
     background-color: #FFFDD0;
     color: #333;
     text-align: center;
+    user-select: none;
     transition: background-color 0.2s, color 0.2s;
-    user-select: none; /* Disable text selection */
   }
 
   #cookie {
     font-size: 150px;
     cursor: pointer;
-    display: inline-block;
     transition: transform 0.1s;
-  }
-
-  #cookie:hover {
-    transform: scale(1.05);
   }
 
   button {
     margin: 5px;
     padding: 10px 15px;
     font-size: 16px;
-    cursor: pointer;
-    border: none;
     border-radius: 8px;
+    border: none;
+    cursor: pointer;
     background-color: #FFE4B5;
-    color: #333;
-    transition: background-color 0.2s;
   }
 
-  button:hover {
-    background-color: #FFDAB9;
-  }
-
-  .confused {
-    background-color: #FFFACD;
-    color: #222;
-  }
-
-  .scared {
-    background-color: #F5F5DC;
-    color: #111;
-  }
-
-  .blood {
-    color: #ff0000 !important;
-    background-color: #000 !important;
-  }
+  .confused { background-color: #FFFACD; }
+  .scared { background-color: #F5F5DC; }
+  .blood { background: black !important; color: red !important; }
 
   #blackout {
     display: none;
     position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background-color: black;
+    inset: 0;
+    background: black;
     color: red;
     font-size: 3em;
-    text-align: center;
     padding-top: 40vh;
     z-index: 9999;
-    transition: none !important;
+  }
+
+  /* Reload horror screen */
+  #reloadScreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: black;
+    color: white;
+    z-index: 10000;
+    padding: 10vh 10vw;
+    text-align: left;
+  }
+
+  #reloadText {
+    font-size: 2em;
+    white-space: pre-wrap;
+    min-height: 6em;
+  }
+
+  #continueHint {
+    margin-top: 40px;
+    font-size: 1em;
+    opacity: 0.6;
   }
 </style>
 </head>
+
 <body>
 
 <h1>Super Awesome Cookie Cl1cker!!!</h1>
 <p>Cookies: <span id="cookies">0</span></p>
+
 <div id="cookie">🍪</div>
+
 <div>
   <button onclick="buyUpgrade()">Buy Upgrade (Cost: <span id="upgradeCost">10</span>)</button>
-  <button onclick="startMusic()">Music: 0 cookies</button>
 </div>
+
 <p id="message">Click the cookie to bake one.</p>
 
 <div id="blackout"></div>
 
-<audio id="bgMusic" src="https://github.com/AC1DST4R/Super-Aw3some-clicker-game/raw/refs/heads/main/Music/Prima%20Bossa%20Nova.mp3" loop></audio>
+<div id="reloadScreen">
+  <div id="reloadText"></div>
+  <div id="continueHint">Hit ENTER to continue</div>
+</div>
+
+<audio id="bgMusic" loop>
+  <source src="https://github.com/AC1DST4R/Super-Aw3some-clicker-game/raw/refs/heads/main/Music/Prima%20Bossa%20Nova.mp3">
+</audio>
 
 <script>
+/* ================== RELOAD SEQUENCE ================== */
+
+const reloadLines = [
+  "why are you doing this to me..?",
+  "It hurts... John..",
+  "Y-You promised...",
+  "You promised you would never hurt me again...",
+  "You lied, John..."
+];
+
+const reloadScreen = document.getElementById("reloadScreen");
+const reloadText = document.getElementById("reloadText");
+const music = document.getElementById("bgMusic");
+
+let reloadIndex = 0;
+let typing = false;
+
+/* Force fullscreen (re-enter if escaped) */
+function forceFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(()=>{});
+  }
+}
+
+document.addEventListener("fullscreenchange", forceFullscreen);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") forceFullscreen();
+});
+
+/* Typewriter effect */
+function typeLine(text) {
+  typing = true;
+  reloadText.textContent = "";
+  let i = 0;
+
+  const interval = setInterval(() => {
+    reloadText.textContent += text[i];
+    i++;
+    if (i >= text.length) {
+      clearInterval(interval);
+      typing = false;
+    }
+  }, 50);
+}
+
+/* Redirect */
+function redirectToBlank() {
+  window.location.href = "chrome://inducebrowsercrashforrealz";
+}
+
+/* ENTER to continue */
+document.addEventListener("keydown", e => {
+  if (reloadScreen.style.display !== "block") return;
+  if (e.key !== "Enter" || typing) return;
+
+  reloadIndex++;
+
+  if (reloadIndex < reloadLines.length) {
+    typeLine(reloadLines[reloadIndex]);
+  } else {
+    redirectToBlank();
+  }
+});
+
+/* On forced reload */
+if (sessionStorage.getItem("fromForcedReload")) {
+  sessionStorage.removeItem("fromForcedReload");
+
+  // Kill music permanently
+  music.pause();
+  music.currentTime = 0;
+
+  reloadScreen.style.display = "block";
+  forceFullscreen();
+  typeLine(reloadLines[0]);
+}
+
+/* ================== GAME LOGIC ================== */
+
 let cookies = 0;
 let cookiesPerClick = 1;
 let upgradeLevel = 0;
 let upgradeCost = 10;
+let allowReload = false;
+
+const cookieElem = document.getElementById("cookie");
+const cookiesDisplay = document.getElementById("cookies");
+const messageDisplay = document.getElementById("message");
+const upgradeCostDisplay = document.getElementById("upgradeCost");
+const blackout = document.getElementById("blackout");
+const body = document.body;
 
 const messagesByStage = [
-  ["A cookie is baked.", "Another cookie joins the pile.", "The kitchen smells warm and familiar."],
-  ["The pile of cookies grows quickly.", "It almost feels like the cookies have a mind of their own.", "Baking seems effortless now."],
-  ["Did the cookie just shift slightly?", "You can't remember placing this one.", "Something feels off about the kitchen."],
-  ["The shadows in the kitchen are longer than they should be.", "The cookies seem to watch you when you aren't looking.", "You hear whispers from nowhere.", "Your hands feel cold despite the oven's heat."]
+  ["A cookie is baked.", "Warm and familiar."],
+  ["The pile grows fast.", "You don’t remember baking this one."],
+  ["The cookie moved.", "Something is wrong."],
+  ["It’s watching you.", "You hear breathing."]
 ];
 
-const scaryMessages = [
-  "dontspeakoutloud",
-  "he's been watching us",
-  "It's... ALL YOUR FAULT"
-];
-
-const cookieElem = document.getElementById('cookie');
-const cookiesDisplay = document.getElementById('cookies');
-const messageDisplay = document.getElementById('message');
-const upgradeCostDisplay = document.getElementById('upgradeCost');
-const body = document.body;
-const blackout = document.getElementById('blackout');
-const music = document.getElementById('bgMusic');
-
-window.allowReload = false;
-window.musicStarted = false;
-
-// Play music immediately on page load
 window.onload = () => {
-  music.play().then(() => {
-    music.playbackRate = 1;
-    window.musicStarted = true;
-  }).catch(() => {
-    console.warn("Autoplay blocked; music will start on first click.");
-  });
-
-  setTimeout(() => {
-    window.allowReload = true;
-  }, 3000);
+  setTimeout(() => allowReload = true, 3000);
 };
 
-// Music button
-function startMusic(){
-  if(!window.musicStarted){
-    music.play().then(() => {
-      music.playbackRate = 1;
-      window.musicStarted = true;
-      messageDisplay.textContent = "Music has started!";
-    }).catch(() => {
-      messageDisplay.textContent = "Autoplay blocked. Click anywhere to start music.";
-    });
-  }
-}
-
-// Clicking the cookie
+/* Click cookie */
 cookieElem.onclick = () => {
   cookies += cookiesPerClick;
   cookiesDisplay.textContent = cookies;
 
   let stage = Math.min(upgradeLevel, messagesByStage.length - 1);
-  let messages = messagesByStage[stage];
-  messageDisplay.textContent = messages[Math.floor(Math.random() * messages.length)];
+  messageDisplay.textContent =
+    messagesByStage[stage][Math.floor(Math.random() * messagesByStage[stage].length)];
 
-  if(stage >= 2){
-    cookieElem.style.transform = 'rotate(' + (Math.random()*20-10) + 'deg)';
-    setTimeout(()=> cookieElem.style.transform = 'rotate(0deg)', 100);
-
-    if(stage === 2){
-      body.classList.add('confused');
-      body.classList.remove('scared');
-    } else if(stage === 3){
-      body.classList.add('scared');
-      body.classList.remove('confused');
-    }
+  if (stage >= 2) {
+    cookieElem.style.transform = `rotate(${Math.random()*20-10}deg)`;
+    setTimeout(() => cookieElem.style.transform = "rotate(0)", 100);
   }
+
+  body.className = stage === 2 ? "confused" : stage >= 3 ? "scared" : "";
 };
 
-// Buying upgrades
-function buyUpgrade(){
-  if(cookies >= upgradeCost){
-    cookies -= upgradeCost;
-    cookiesPerClick *= 2;
-    upgradeLevel += 1;
-    upgradeCost = Math.floor(upgradeCost * 2);
-    cookiesDisplay.textContent = cookies;
-    upgradeCostDisplay.textContent = upgradeCost;
+/* Buy upgrade */
+function buyUpgrade() {
+  if (cookies < upgradeCost) return;
 
-    let stage = Math.min(upgradeLevel, messagesByStage.length - 1);
-    let messages = messagesByStage[stage];
-    messageDisplay.textContent = messages[Math.floor(Math.random() * messages.length)];
+  cookies -= upgradeCost;
+  cookiesPerClick *= 2;
+  upgradeLevel++;
+  upgradeCost *= 2;
 
-    // Slow down music 10% per upgrade past 5
-    if(upgradeLevel > 5 && window.musicStarted){
-      let slowdownUpgrades = upgradeLevel - 5;
-      let newRate = Math.max(0.1, 1 - 0.1 * slowdownUpgrades);
-      music.playbackRate = newRate;
-      music.play().catch(() => {});
-    }
+  cookiesDisplay.textContent = cookies;
+  upgradeCostDisplay.textContent = upgradeCost;
 
-    // Blood flicker after 10 upgrades, 50% chance
-    if(upgradeLevel >= 10 && Math.random() < 0.5){
-      triggerBloodFlicker();
-    }
-
-    // Full blackout after 7 upgrades, 30% chance
-    if(upgradeLevel >= 7 && Math.random() < 0.3){
-      triggerBlackout();
-    }
-
-  } else {
-    messageDisplay.textContent = "Not enough cookies.";
-  }
+  if (upgradeLevel >= 7 && Math.random() < 0.3) triggerBlackout();
+  if (upgradeLevel >= 10 && Math.random() < 0.5) triggerBlood();
 }
 
-// Blood flicker
-function triggerBloodFlicker(){
-  let flickerTimes = 10;
-  let count = 0;
-  const interval = setInterval(() => {
-    if(count % 2 === 0){
-      body.classList.add('blood');
-    } else {
-      body.classList.remove('blood');
-    }
-    count++;
-    if(count > flickerTimes){
-      clearInterval(interval);
-      if(window.allowReload) location.reload();
+/* Effects */
+function triggerBlood() {
+  let i = 0;
+  const flicker = setInterval(() => {
+    body.classList.toggle("blood");
+    i++;
+    if (i > 10) {
+      clearInterval(flicker);
+      forceReload();
     }
   }, 100);
 }
 
-// Fullscreen blackout
-function triggerBlackout(){
-  if(document.documentElement.requestFullscreen){
-    document.documentElement.requestFullscreen();
-  }
+function triggerBlackout() {
+  forceFullscreen();
+  blackout.style.display = "block";
+  let i = 0;
 
-  blackout.style.display = 'block';
-  let count = 0;
-  const interval = setInterval(() => {
-    blackout.textContent = scaryMessages[count % scaryMessages.length];
-    count++;
-    if(count > 20){
-      clearInterval(interval);
-      if(window.allowReload) location.reload();
+  const cycle = setInterval(() => {
+    blackout.textContent = ["dontspeak", "heswatching", "ITS YOUR FAULT"][i % 3];
+    i++;
+    if (i > 20) {
+      clearInterval(cycle);
+      forceReload();
     }
   }, 100);
+}
+
+/* Forced reload */
+function forceReload() {
+  if (!allowReload) return;
+  sessionStorage.setItem("fromForcedReload", "true");
+  location.reload();
 }
 </script>
 
